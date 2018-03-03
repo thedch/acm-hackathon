@@ -130,7 +130,7 @@ def get_color_from_session(intent, session):
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
-def newBusRoute(intent, session):
+def newBusRoute(intent, session, address):
 
     session_attributes = {}
     reprompt_text = None
@@ -143,7 +143,9 @@ def newBusRoute(intent, session):
     key = 'AIzaSyAhr3t451R1gsR2XaMo83Tpfk_vdULJgG8'
     url = base_url + origin + dest + mode + key
 
-    r = requests.get(url)
+    data = {'data': {'origin': 'Jack Baskin Engineering', 'destination': 'Kims Salon', 'mode': 'transit', 'key': key}}
+
+    r = requests.get(url, json=data)
     r = (r.json())
 
     steps = r['routes'][0]['legs'][0]['steps'] # this is a list
@@ -188,11 +190,15 @@ def on_launch(launch_request, session):
     return get_welcome_response()
 
 
-def on_intent(intent_request, session):
+def on_intent(event):
     """ Called when the user specifies an intent for this skill """
 
     # print("on_intent requestId=" + intent_request['requestId'] +
           # ", sessionId=" + session['sessionId'])
+
+
+    intent_request = event['request']
+    session = event['session']
 
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
@@ -203,13 +209,35 @@ def on_intent(intent_request, session):
     elif intent_name == "WhatsMyColorIntent":
         return get_color_from_session(intent, session)
     elif intent_name == "NewBusRouteIntent":
-        return newBusRoute(intent, session)
+        address = getAddress(event)
+        return newBusRoute(intent, session, address)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request()
     else:
         raise ValueError("Invalid intent")
+
+def getAddress(event):
+    deviceID = event['context']['System']['device']['deviceId']
+    bearer = event['context']['System']['apiAccessToken']
+    endpoint = event['context']['System']['apiEndpoint']
+
+    print(deviceID)
+    print(bearer)
+    print(endpoint)
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + bearer,
+    }
+
+    r = requests.get(endpoint + '/v1/devices/' + deviceID + '/settings/address', headers=headers)
+
+    line1 = r['addressLine1']
+    city = r['city']
+
+    return line1 + ' ' + city
 
 
 def on_session_ended(session_ended_request, session):
@@ -232,22 +260,6 @@ def lambda_handler(event, context):
     # print("event.session.application.applicationId=" +
           # event['session']['application']['applicationId'])
 
-    deviceID = event['context']['System']['device']['deviceId']
-    bearer = event['context']['System']['apiAccessToken']
-    endpoint = event['context']['System']['apiEndpoint']
-
-    print(deviceID)
-    print(bearer)
-    print(endpoint)
-
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + bearer,
-    }
-
-    r = requests.get(endpoint + '/v1/devices/' + deviceID + '/settings/address', headers=headers)
-    print(r)
-    print(r.text)
 
     """
     Uncomment this if statement and populate with your skill's application ID to
