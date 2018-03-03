@@ -10,6 +10,8 @@ http://amzn.to/1LGWsLG
 from __future__ import print_function
 import requests
 import json
+import googlemaps
+import auth
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -136,19 +138,22 @@ def newBusRoute(intent, session, address):
     reprompt_text = None
     should_end_session = False
 
-    base_url = 'https://maps.googleapis.com/maps/api/directions/json?'
-    origin = 'origin=Jack+Baskin+Engineering&'
-    dest = 'destination=Kims+Salon&'
-    mode = 'mode=transit&'
-    key = 'AIzaSyAhr3t451R1gsR2XaMo83Tpfk_vdULJgG8'
-    url = base_url + origin + dest + mode + key
+    # base_url = 'https://maps.googleapis.com/maps/api/directions/json?'
+    # origin = 'origin=Jack+Baskin+Engineering&'
+    # dest = 'destination=Kims+Salon&'
+    # mode = 'mode=transit&'
+    # key = 'AIzaSyAhr3t451R1gsR2XaMo83Tpfk_vdULJgG8'
+    # url = base_url + origin + dest + mode + key
 
-    data = {'data': {'origin': 'Jack Baskin Engineering', 'destination': 'Kims Salon', 'mode': 'transit', 'key': key}}
+    # data = {'data': {'origin': 'Jack Baskin Engineering', 'destination': 'Kims Salon', 'mode': 'transit', 'key': key}}
 
-    r = requests.get(url, json=data)
-    r = (r.json())
+    gmaps = googlemaps.Client(key=auth.key)
 
-    steps = r['routes'][0]['legs'][0]['steps'] # this is a list
+    r = gmaps.directions("Kims Salon Santa Cruz",
+                         "Jack Baskin Engineering",
+                         mode="transit")
+
+    steps = r[0]['legs'][0]['steps']
 
     for step in steps:
         if step['travel_mode'] == 'TRANSIT':
@@ -159,8 +164,6 @@ def newBusRoute(intent, session, address):
     speech_output += 'Get off at ' + firstBusStep['transit_details']['arrival_stop']['name'] + ' '
     speech_output += 'Bus Leaves at ' + firstBusStep['transit_details']['departure_time']['text'] + ' '
     speech_output += 'You will arrive at ' + firstBusStep['transit_details']['arrival_time']['text']
-
-    # speech_output = 'Hello world'
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
