@@ -138,18 +138,9 @@ def newBusRoute(intent, session, address):
     reprompt_text = None
     should_end_session = False
 
-    # base_url = 'https://maps.googleapis.com/maps/api/directions/json?'
-    # origin = 'origin=Jack+Baskin+Engineering&'
-    # dest = 'destination=Kims+Salon&'
-    # mode = 'mode=transit&'
-    # key = 'AIzaSyAhr3t451R1gsR2XaMo83Tpfk_vdULJgG8'
-    # url = base_url + origin + dest + mode + key
-
-    # data = {'data': {'origin': 'Jack Baskin Engineering', 'destination': 'Kims Salon', 'mode': 'transit', 'key': key}}
-
     gmaps = googlemaps.Client(key=auth.key)
 
-    r = gmaps.directions("Kims Salon Santa Cruz",
+    r = gmaps.directions(address,
                          "Jack Baskin Engineering",
                          mode="transit")
 
@@ -159,10 +150,11 @@ def newBusRoute(intent, session, address):
         if step['travel_mode'] == 'TRANSIT':
             firstBusStep = step
 
-    speech_output = firstBusStep['html_instructions'] + ' '
-    speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + ' '
-    speech_output += 'Get off at ' + firstBusStep['transit_details']['arrival_stop']['name'] + ' '
-    speech_output += 'Bus Leaves at ' + firstBusStep['transit_details']['departure_time']['text'] + ' '
+    speech_output = firstBusStep['html_instructions'] + '. '
+    speech_output += 'Starting from ' + address + '. '
+    speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + '. '
+    speech_output += 'Get off at ' + firstBusStep['transit_details']['arrival_stop']['name'] + '. '
+    speech_output += 'Bus Leaves at ' + firstBusStep['transit_details']['departure_time']['text'] + '. '
     speech_output += 'You will arrive at ' + firstBusStep['transit_details']['arrival_time']['text']
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
@@ -237,11 +229,13 @@ def getAddress(event):
 
     r = requests.get(endpoint + '/v1/devices/' + deviceID + '/settings/address', headers=headers)
 
-    line1 = r['addressLine1']
-    city = r['city']
+    print(r)
+    print(r.text)
+
+    line1 = r.json()['addressLine1']
+    city = r.json()['city']
 
     return line1 + ' ' + city
-
 
 def on_session_ended(session_ended_request, session):
     """ Called when the user ends the session.
@@ -280,6 +274,6 @@ def lambda_handler(event, context):
     if event['request']['type'] == "LaunchRequest":
         return on_launch(event['request'], event['session'])
     elif event['request']['type'] == "IntentRequest":
-        return on_intent(event['request'], event['session'])
+        return on_intent(event)
     elif event['request']['type'] == "SessionEndedRequest":
         return on_session_ended(event['request'], event['session'])
