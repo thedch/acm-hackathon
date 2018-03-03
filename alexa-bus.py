@@ -131,6 +131,7 @@ def get_color_from_session(intent, session):
         intent['name'], speech_output, reprompt_text, should_end_session))
 
 def newBusRoute(intent, session):
+
     session_attributes = {}
     reprompt_text = None
     should_end_session = False
@@ -172,8 +173,8 @@ def on_session_started(session_started_request, session):
     """ Called when the session starts """
 
     r = requests.get("https://danielhunter.io/static/README.txt")
-    print("on_session_started requestId=" + session_started_request['requestId']
-          + ", sessionId=" + session['sessionId'])
+    # print("on_session_started requestId=" + session_started_request['requestId']
+          # + ", sessionId=" + session['sessionId'])
 
 
 def on_launch(launch_request, session):
@@ -181,8 +182,8 @@ def on_launch(launch_request, session):
     want
     """
 
-    print("on_launch requestId=" + launch_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
+    # print("on_launch requestId=" + launch_request['requestId'] +
+          # ", sessionId=" + session['sessionId'])
     # Dispatch to your skill's launch
     return get_welcome_response()
 
@@ -190,8 +191,8 @@ def on_launch(launch_request, session):
 def on_intent(intent_request, session):
     """ Called when the user specifies an intent for this skill """
 
-    print("on_intent requestId=" + intent_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
+    # print("on_intent requestId=" + intent_request['requestId'] +
+          # ", sessionId=" + session['sessionId'])
 
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
@@ -216,8 +217,8 @@ def on_session_ended(session_ended_request, session):
 
     Is not called when the skill returns should_end_session=true
     """
-    print("on_session_ended requestId=" + session_ended_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
+    # print("on_session_ended requestId=" + session_ended_request['requestId'] +
+          # ", sessionId=" + session['sessionId'])
     # add cleanup logic here
 
 
@@ -228,8 +229,25 @@ def lambda_handler(event, context):
     etc.) The JSON body of the request is provided in the event parameter.
     """
 
-    print("event.session.application.applicationId=" +
-          event['session']['application']['applicationId'])
+    # print("event.session.application.applicationId=" +
+          # event['session']['application']['applicationId'])
+
+    deviceID = event['context']['System']['device']['deviceId']
+    bearer = event['context']['System']['apiAccessToken']
+    endpoint = event['context']['System']['apiEndpoint']
+
+    print(deviceID)
+    print(bearer)
+    print(endpoint)
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + bearer,
+    }
+
+    r = requests.get(endpoint + '/v1/devices/' + deviceID + '/settings/address', headers=headers)
+    print(r)
+    print(r.text)
 
     """
     Uncomment this if statement and populate with your skill's application ID to
@@ -250,4 +268,3 @@ def lambda_handler(event, context):
         return on_intent(event['request'], event['session'])
     elif event['request']['type'] == "SessionEndedRequest":
         return on_session_ended(event['request'], event['session'])
-
