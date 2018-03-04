@@ -1,8 +1,10 @@
 from __future__ import print_function
+from collections import Counter
 import requests
 import json
 import googlemaps
 import auth
+import math
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -100,6 +102,47 @@ def newBusRoute(intent, session, address):
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
+def difference(one, two):
+    return math.sqrt((one[0] - two[0])**2 + (one[1] - two[1])**2)
+
+def currentLoopsInArea(intent, session):
+    session_attributes = {}
+    reprompt_text = None
+    should_end_session = True
+    loops = requests.get("http://bts.ucsc.edu:8081/location/get")
+
+    sectors = [
+        ("Base",36.977613,-122.054341),
+        ("Porter", 36.993451, -122.063825),
+        ("Baskin", 36.999709, -122.062688),
+        ("Bookstore", 36.997927, -122.055177)
+    ]
+
+    minimumForLoop = []
+
+    for loop in loops.json():
+        listNew = []
+        for i in sectors:
+            listNew.append( (i[0], difference( (i[1], i[2]) , (loop['lat'], loop['lon']))))
+        # print(listNew)
+        listNew.sort(key=lambda tup: tup[1])
+        minimumForLoop.append( listNew[0][0] )
+
+    occurences = Counter(minimumForLoop)
+
+    speech_output = ""
+    for i in occurences.most_common():
+        if i[0] == 1:
+            speech_output += 'There is ' + str(i[1]) + " Loop at " + str(i[0]) + " ."
+        else:
+            speech_output += 'There are ' + str(i[1]) + " Loops at " + str(i[0]) + " ."
+
+    if speech_output == '':
+        speech_output = 'Sorry, no loops found!'
+
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
+
 # --------------- Events ------------------
 
 def on_session_started(session_started_request, session):
@@ -139,12 +182,15 @@ def on_intent(event):
     intent_name = intent_request['intent']['name']
 
     # Dispatch to your skill's intent handlers
-    if intent_name == "NewBusRouteIntent":
+    if intent_name == "NewLoopIntent":
+        return currentLoopsInArea(intent, session)
+
+    elif intent_name == "NewBusRouteIntent":
         address, error = getAddress(event)
         if error:
             return errorMessage(intent, session)
         return newBusRoute(intent, session, address)
-    if intent_name == 'HungerIntent':
+    elif intent_name == 'HungerIntent':
         return currentDiningHalls(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
@@ -243,5 +289,4 @@ def lambda_handler(event, context):
     elif event['request']['type'] == "SessionEndedRequest":
         ret = on_session_ended(event['request'], event['session'])
 
-    # print(json.dumps(ret, indent=1))
     return ret
