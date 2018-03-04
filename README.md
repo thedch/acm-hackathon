@@ -15,11 +15,13 @@ First, invoke the Alexa Skill.
 
 Immediately, after, say the proper command:
 
-` "I need a bus to Kresge" -- From your address configured (automagically), obtains the closes santa cruz metro bus to your nearest stop.
+` "I need a bus to Kresge" -- From your address configured (automagically), obtains the closes santa cruz metro bus to your nearest stop.`
 
-` "I'm hungry" -- Lists all currently open dining halls
+You can name any of the UCSC Colleges for this first utterance.
 
-` "I neeed a Loop" -- Lists all loops in service and the areas where they are.
+` "I'm hungry" -- Lists all currently open dining halls `
+
+` "I neeed a Loop" -- Lists all loops in service and the areas where they are.`
 
 
 ## About
