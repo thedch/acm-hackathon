@@ -8,11 +8,11 @@ import auth
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
     print(output)
-    output = '<speak> ' + output + ' </speak>'
+    # output = '<speak> ' + output + ' </speak>'
     return {
         'outputSpeech': {
-            'type': 'SSML',
-            'ssml': output
+            'type': 'PlainText',
+            'text': output
         },
         'card': {
             'type': 'Simple',
@@ -99,7 +99,7 @@ def newBusRoute(intent, session, address):
     speech_output = 'To get to destination by ' + arrival_time
 
     # speech_output += 'Take the ' + busNumber + ' '
-    speech_output += '<p> Take the ' + busNumber + '</p>'
+    speech_output += 'Take the ' + busNumber
     speech_output += 'Starting from ' + address + '. '
     speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + '. '
     # speech_output += 'Get off at ' + firstBusStep['transit_details']['arrival_stop']['name'] + '... '
@@ -221,13 +221,17 @@ def lambda_handler(event, context):
     #         "amzn1.echo-sdk-ams.app.[unique-value-here]"):
     #     raise ValueError("Invalid Application ID")
 
+
     if event['session']['new']:
         on_session_started({'requestId': event['request']['requestId']},
                            event['session'])
 
     if event['request']['type'] == "LaunchRequest":
-        return on_launch(event['request'], event['session'])
+        ret = on_launch(event['request'], event['session'])
     elif event['request']['type'] == "IntentRequest":
-        return on_intent(event)
+        ret = on_intent(event)
     elif event['request']['type'] == "SessionEndedRequest":
-        return on_session_ended(event['request'], event['session'])
+        ret = on_session_ended(event['request'], event['session'])
+
+    print(json.dumps(ret, indent=1))
+    return ret
