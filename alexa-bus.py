@@ -47,13 +47,14 @@ def get_welcome_response():
     should_end_session = False
     card_title = "Welcome"
 
-    speech_output = "Welcome the Santa Cruz Slug Bus App! I can help you " \
-                    "get to class on time. Where do you want to go? " \
+    speech_output = "Welcome to the Slugsistant App! I can help you \
+                    get to class on time, find Loop buses, and check out \
+                    Dining halls"
 
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Sorry, I didn't understand. Where do you " \
-                    "want to go?"
+    reprompt_text = "Sorry, I didn't understand. What do you " \
+                    "want to do?"
 
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -90,10 +91,15 @@ def newBusRoute(intent, session, address):
 
     busNumber = firstBusStep['html_instructions'].split()[2]
 
+    busStop = firstBusStep['transit_details']['departure_stop']['name']
+
+    if 'lockwise' in busNumber:
+        busNumber = busNumber + ' loop bus'
+
     speech_output = 'To get to ' + destination
     speech_output += 'Take the ' + busNumber
     speech_output += 'From ' + address + '. '
-    speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + '. '
+    speech_output += 'Get on at ' + busStop + '. '
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
@@ -132,7 +138,7 @@ def currentLoopsInArea(intent, session):
 
     speech_output = ""
     for i in occurences.most_common():
-        if i[0] == 1:
+        if i[1] == 1:
             speech_output += 'There is ' + str(i[1]) + " Loop at " + str(i[0]) + " ."
         else:
             speech_output += 'There are ' + str(i[1]) + " Loops at " + str(i[0]) + " ."
