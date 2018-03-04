@@ -9,7 +9,7 @@ import math
 # --------------- Helpers that build all of the responses ----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
-    print(output)
+    # print(output)
     return {
         'outputSpeech': {
             'type': 'PlainText',
@@ -39,8 +39,7 @@ def build_response(session_attributes, speechlet_response):
 # --------------- Functions that control the skill's behavior ------------------
 
 def get_welcome_response():
-    """ If we wanted to initialize the session to have some attributes we could
-    add those here
+    """ The initial function that introduces the user the to application
     """
 
     session_attributes = {}
@@ -60,6 +59,8 @@ def get_welcome_response():
         card_title, speech_output, reprompt_text, should_end_session))
 
 def handle_session_end_request():
+    """ Handles the shutdown of the application
+    """
     card_title = "Session Ended"
     speech_output = "Thank you for Santa Cruz Slug Bus App! " \
                     "Have a nice day!"
@@ -70,6 +71,9 @@ def handle_session_end_request():
         card_title, speech_output, None, should_end_session))
 
 def newBusRoute(intent, session, address):
+    """ Takes in the user's device address and intent, and calculates a route
+    using the Google Maps API.
+    """
     session_attributes = {}
     reprompt_text = None
     should_end_session = True
@@ -85,14 +89,15 @@ def newBusRoute(intent, session, address):
 
     for step in steps:
         if step['travel_mode'] == 'TRANSIT':
-            firstBusStep = step
+            bus_step = step
 
-    print('Bus number: ', firstBusStep['html_instructions'])
+    busNumber = bus_step['html_instructions'].split()[2] # Get the number of the bus (20, 16, etc)
+    busStop = bus_step['transit_details']['departure_stop']['name'] # Get the name of the bus stop to walk to
 
-    busNumber = firstBusStep['html_instructions'].split()[2]
-
-    busStop = firstBusStep['transit_details']['departure_stop']['name']
-
+    # If the user is close to campus, the ideal route with be a clockwise or
+    # counterclockwise loop. This adds the phrase 'loop bus' to be more explicit
+    # in our instructions to the user. This picks up both Clockwise and clockwise
+    # As well as counterclock wise without a space.
     if 'lockwise' in busNumber:
         busNumber = busNumber + ' loop bus'
 
@@ -109,14 +114,25 @@ def newBusRoute(intent, session, address):
         intent['name'], speech_output, reprompt_text, should_end_session))
 
 def difference(one, two):
+    """ Standard Euclidian distance formula for analyzing Loop bus positions """
     return math.sqrt((one[0] - two[0])**2 + (one[1] - two[1])**2)
 
 def currentLoopsInArea(intent, session):
+    """ Grabs the locations of all Loops currently running via the TAPS API
+    Calculates the nearest sector and then verbalizes to the user where each
+    Loop bus is
+
+    - TODO: Expand with more sectors
+    - TODO: Determine the direction of each Loop bus
+    """
     session_attributes = {}
     reprompt_text = None
     should_end_session = True
+
+    # Handy TAPS Loop API
     loops = requests.get("http://bts.ucsc.edu:8081/location/get")
 
+    # Hardcoded sections of campus to associate Loop buses with
     sectors = [
         ("Base",36.977613,-122.054341),
         ("Porter", 36.993451, -122.063825),
@@ -132,7 +148,7 @@ def currentLoopsInArea(intent, session):
             listNew.append( (i[0], difference( (i[1], i[2]) , (loop['lat'], loop['lon']))))
         # print(listNew)
         listNew.sort(key=lambda tup: tup[1])
-        minimumForLoop.append( listNew[0][0] )
+        minimumForLoop.append(listNew[0][0])
 
     occurences = Counter(minimumForLoop)
 
@@ -144,6 +160,7 @@ def currentLoopsInArea(intent, session):
             speech_output += 'There are ' + str(i[1]) + " Loops at " + str(i[0]) + " ."
 
     if speech_output == '':
+        # In case no Loops are running or API fails
         speech_output = 'Sorry, no loops found!'
 
     return build_response(session_attributes, build_speechlet_response(
@@ -166,6 +183,9 @@ def on_launch(launch_request, session):
     return get_welcome_response()
 
 def errorMessage(intent, session):
+    """ In case the user has not configured our app to have access to their device
+    location
+    """
     session_attributes = {}
     reprompt_text = None
     should_end_session = False
@@ -176,10 +196,6 @@ def errorMessage(intent, session):
 
 def on_intent(event):
     """ Called when the user specifies an intent for this skill """
-
-    # print("on_intent requestId=" + intent_request['requestId'] +
-          # ", sessionId=" + session['sessionId'])
-
 
     intent_request = event['request']
     session = event['session']
@@ -206,20 +222,26 @@ def on_intent(event):
         raise ValueError("Invalid intent")
 
 def currentDiningHalls(intent, session):
+    """ Collects all currently open dining halls via Google Places API and
+    returns them to the user.
+
+    TODO: Add when they close
+    TODO: Add cafes
+    """
     session_attributes = {}
     reprompt_text = None
     should_end_session = True
 
     gmaps = googlemaps.Client(key=auth.key)
-    r = gmaps.places('dining halls open uc santa cruz')
+    resp = gmaps.places('dining halls open uc santa cruz')
 
-    r = r['results']
+    resp = resp['results']
     speech_output = ''
 
-    for i in r:
-        if 'opening_hours' in i:
-            if i['opening_hours']['open_now']:
-                speech_output += i['name'] + '. '
+    for dining_hall in resp:
+        if 'opening_hours' in dining_hall:
+            if dining_hall['opening_hours']['open_now']:
+                speech_output += dining_hall['name'] + '. '
 
     speech_output = 'The current dining halls open are: ' + speech_output
 
@@ -260,7 +282,7 @@ def on_session_ended(session_ended_request, session):
     """
     # print("on_session_ended requestId=" + session_ended_request['requestId'] +
           # ", sessionId=" + session['sessionId'])
-    # add cleanup logic here
+    return
 
 
 # --------------- Main handler ------------------
