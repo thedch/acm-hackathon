@@ -7,10 +7,12 @@ import auth
 # --------------- Helpers that build all of the responses ----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
+    print(output)
+    output = '<speak> ' + output + ' </speak>'
     return {
         'outputSpeech': {
-            'type': 'PlainText',
-            'text': output
+            'type': 'SSML',
+            'ssml': output
         },
         'card': {
             'type': 'Simple',
@@ -43,23 +45,17 @@ def get_welcome_response():
     """
 
     session_attributes = {}
-
+    should_end_session = False
     card_title = "Welcome"
-
-    # r = requests.get("https://danielhunter.io/static/README.txt")
-    # speech_output = r.text
 
     speech_output = "Welcome the Santa Cruz Slug Bus App! I can help you " \
                     "get to class on time. Where do you want to go? " \
-
-    # speech_output = '<speak> ' + speech_output + ' </speak>'
 
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "Sorry, I didn't understand. Where do you " \
                     "want to go?"
 
-    should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
@@ -67,8 +63,6 @@ def handle_session_end_request():
     card_title = "Session Ended"
     speech_output = "Thank you for Santa Cruz Slug Bus App! " \
                     "Have a nice day!"
-
-    # speech_output = '<speak> ' + speech_output + ' </speak>'
 
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -83,6 +77,7 @@ def newBusRoute(intent, session, address):
     arrival_time = intent['slots']['ArrivalTime']['value']
 
     print(arrival_time)
+    # arrival_time = '<say-as interpret-as="time">' + arrival_time + '</say-as> '
 
     gmaps = googlemaps.Client(key=auth.key)
 
@@ -100,14 +95,13 @@ def newBusRoute(intent, session, address):
 
     busNumber = firstBusStep['html_instructions'].split()[2]
 
-    # arrival_time = '<say-as interpret-as="time">' + arrival_time + '</say-as> '
 
     speech_output = 'To get to destination by ' + arrival_time
 
-    speech_output += 'Take the ' + busNumber + ' '
-    # speech_output += '<p> Take the ' + busNumber + '</p>'
-    speech_output += 'Starting from ' + address + '... '
-    speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + '... '
+    # speech_output += 'Take the ' + busNumber + ' '
+    speech_output += '<p> Take the ' + busNumber + '</p>'
+    speech_output += 'Starting from ' + address + '. '
+    speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + '. '
     # speech_output += 'Get off at ' + firstBusStep['transit_details']['arrival_stop']['name'] + '... '
     # speech_output += 'Bus Leaves at ' + firstBusStep['transit_details']['departure_time']['text'] + '... '
     # speech_output += 'You will arrive at ' + firstBusStep['transit_details']['arrival_time']['text']
@@ -115,8 +109,6 @@ def newBusRoute(intent, session, address):
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
-
-    # speech_output = '<speak> ' + speech_output + ' </speak>'
 
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
