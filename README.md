@@ -37,6 +37,11 @@ You can name any of the UCSC Colleges for this first utterance.
 
 ` "I neeed a Loop" -- Lists all loops in service and the areas where they are.`
 
+## Dependencies
+1. Google maps python library
+2. Requests API
+3. Python Math
+4. Num2Words
 
 ## About
 
