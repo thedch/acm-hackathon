@@ -74,18 +74,14 @@ def newBusRoute(intent, session, address):
     reprompt_text = None
     should_end_session = True
     destination = "UCSC " + intent['slots']['Destinations']['value']
-    arrival_time = intent['slots']['ArrivalTime']['value']
-
-    print(arrival_time)
-    # arrival_time = '<say-as interpret-as="time">' + arrival_time + '</say-as> '
 
     gmaps = googlemaps.Client(key=auth.key)
 
-    r = gmaps.directions(address,
+    directions = gmaps.directions(address,
                          destination,
                          mode="transit")
 
-    steps = r[0]['legs'][0]['steps']
+    steps = directions[0]['legs'][0]['steps']
 
     for step in steps:
         if step['travel_mode'] == 'TRANSIT':
@@ -95,16 +91,10 @@ def newBusRoute(intent, session, address):
 
     busNumber = firstBusStep['html_instructions'].split()[2]
 
-
-    speech_output = 'To get to destination by ' + arrival_time
-
-    # speech_output += 'Take the ' + busNumber + ' '
+    speech_output = 'To get to ' + destination
     speech_output += 'Take the ' + busNumber
-    speech_output += 'Starting from ' + address + '. '
+    speech_output += 'From ' + address + '. '
     speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + '. '
-    # speech_output += 'Get off at ' + firstBusStep['transit_details']['arrival_stop']['name'] + '... '
-    # speech_output += 'Bus Leaves at ' + firstBusStep['transit_details']['departure_time']['text'] + '... '
-    # speech_output += 'You will arrive at ' + firstBusStep['transit_details']['arrival_time']['text']
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
