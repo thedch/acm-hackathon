@@ -8,7 +8,6 @@ import auth
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
     print(output)
-    # output = '<speak> ' + output + ' </speak>'
     return {
         'outputSpeech': {
             'type': 'PlainText',
@@ -28,14 +27,12 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
         'shouldEndSession': should_end_session
     }
 
-
 def build_response(session_attributes, speechlet_response):
     return {
         'version': '1.0',
         'sessionAttributes': session_attributes,
         'response': speechlet_response
     }
-
 
 # --------------- Functions that control the skill's behavior ------------------
 
@@ -147,12 +144,35 @@ def on_intent(event):
         if error:
             return errorMessage(intent, session)
         return newBusRoute(intent, session, address)
+    if intent_name == 'HungerIntent':
+        return currentDiningHalls(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request()
     else:
         raise ValueError("Invalid intent")
+
+def currentDiningHalls(intent, session):
+    session_attributes = {}
+    reprompt_text = None
+    should_end_session = True
+
+    gmaps = googlemaps.Client(key=auth.key)
+    r = gmaps.places('dining halls open uc santa cruz')
+
+    r = r['results']
+    speech_output = ''
+
+    for i in r:
+        if 'opening_hours' in i:
+            if i['opening_hours']['open_now']:
+                speech_output += i['name'] + '. '
+
+    speech_output = 'The current dining halls open are: ' + speech_output
+
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
 
 def getAddress(event):
     ''' Returns the address of the user if the application has sufficient permissions
@@ -223,5 +243,5 @@ def lambda_handler(event, context):
     elif event['request']['type'] == "SessionEndedRequest":
         ret = on_session_ended(event['request'], event['session'])
 
-    print(json.dumps(ret, indent=1))
+    # print(json.dumps(ret, indent=1))
     return ret
