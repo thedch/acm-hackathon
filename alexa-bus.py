@@ -1,12 +1,3 @@
-"""
-This sample demonstrates a simple skill built with the Amazon Alexa Skills Kit.
-The Intent Schema, Custom Slots, and Sample Utterances for this skill, as well
-as testing instructions are located at http://amzn.to/1LzFrj6
-
-For additional samples, visit the Alexa Skills Kit Getting Started guide at
-http://amzn.to/1LGWsLG
-"""
-
 from __future__ import print_function
 import requests
 import json
@@ -79,69 +70,17 @@ def handle_session_end_request():
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
-
-def create_favorite_color_attributes(favorite_color):
-    return {"favoriteColor": favorite_color}
-
-
-def set_color_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
-    user.
-    """
-
-    card_title = intent['name']
-    session_attributes = {}
-    should_end_session = False
-
-    if 'Color' in intent['slots']:
-        favorite_color = intent['slots']['Color']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-    else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
-
-
-def get_color_from_session(intent, session):
-    session_attributes = {}
-    reprompt_text = None
-
-    if session.get('attributes', {}) and "favoriteColor" in session.get('attributes', {}):
-        favorite_color = session['attributes']['favoriteColor']
-        speech_output = "Your favorite color is " + favorite_color + \
-                        ". Goodbye."
-        should_end_session = True
-    else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "You can say, my favorite color is red."
-        should_end_session = False
-
-    # Setting reprompt_text to None signifies that we do not want to reprompt
-    # the user. If the user does not respond or says something that is not
-    # understood, the session will end.
-    return build_response(session_attributes, build_speechlet_response(
-        intent['name'], speech_output, reprompt_text, should_end_session))
-
 def newBusRoute(intent, session, address):
 
     session_attributes = {}
     reprompt_text = None
     should_end_session = False
+    destination = "UCSC " + intent['slots']['Destinations']['value']
 
     gmaps = googlemaps.Client(key=auth.key)
 
     r = gmaps.directions(address,
-                         "Jack Baskin Engineering",
+                         destination,
                          mode="transit")
 
     steps = r[0]['legs'][0]['steps']
@@ -150,11 +89,11 @@ def newBusRoute(intent, session, address):
         if step['travel_mode'] == 'TRANSIT':
             firstBusStep = step
 
-    speech_output = firstBusStep['html_instructions'] + '. '
-    speech_output += 'Starting from ' + address + '. '
-    speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + '. '
-    speech_output += 'Get off at ' + firstBusStep['transit_details']['arrival_stop']['name'] + '. '
-    speech_output += 'Bus Leaves at ' + firstBusStep['transit_details']['departure_time']['text'] + '. '
+    speech_output = firstBusStep['html_instructions'] + '... '
+    speech_output += 'Starting from ' + address + '.... '
+    speech_output += 'Get on at ' + firstBusStep['transit_details']['departure_stop']['name'] + '... '
+    speech_output += 'Get off at ' + firstBusStep['transit_details']['arrival_stop']['name'] + '... '
+    speech_output += 'Bus Leaves at ' + firstBusStep['transit_details']['departure_time']['text'] + '... '
     speech_output += 'You will arrive at ' + firstBusStep['transit_details']['arrival_time']['text']
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
@@ -168,11 +107,7 @@ def newBusRoute(intent, session, address):
 
 def on_session_started(session_started_request, session):
     """ Called when the session starts """
-
-    r = requests.get("https://danielhunter.io/static/README.txt")
-    # print("on_session_started requestId=" + session_started_request['requestId']
-          # + ", sessionId=" + session['sessionId'])
-
+    return
 
 def on_launch(launch_request, session):
     """ Called when the user launches the skill without specifying what they
@@ -184,6 +119,14 @@ def on_launch(launch_request, session):
     # Dispatch to your skill's launch
     return get_welcome_response()
 
+def errorMessage(intent, session):
+    session_attributes = {}
+    reprompt_text = None
+    should_end_session = False
+    speech_output = 'Could not find your location, make sure that proper permissions are set for slug bus finder in the alexa amazon mobile app'
+
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
 
 def on_intent(event):
     """ Called when the user specifies an intent for this skill """
@@ -199,12 +142,10 @@ def on_intent(event):
     intent_name = intent_request['intent']['name']
 
     # Dispatch to your skill's intent handlers
-    if intent_name == "MyColorIsIntent":
-        return set_color_in_session(intent, session)
-    elif intent_name == "WhatsMyColorIntent":
-        return get_color_from_session(intent, session)
-    elif intent_name == "NewBusRouteIntent":
-        address = getAddress(event)
+    if intent_name == "NewBusRouteIntent":
+        address, error = getAddress(event)
+        if error:
+            return errorMessage(intent, session)
         return newBusRoute(intent, session, address)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
@@ -214,13 +155,14 @@ def on_intent(event):
         raise ValueError("Invalid intent")
 
 def getAddress(event):
+    ''' Returns the address of the user if the application has sufficient permissions
+    Else, returns an empty string and boolean 'True' to indicate error
+
+    Return type: Tuple
+    '''
     deviceID = event['context']['System']['device']['deviceId']
     bearer = event['context']['System']['apiAccessToken']
     endpoint = event['context']['System']['apiEndpoint']
-
-    print(deviceID)
-    print(bearer)
-    print(endpoint)
 
     headers = {
         'Content-Type': 'application/json',
@@ -229,13 +171,15 @@ def getAddress(event):
 
     r = requests.get(endpoint + '/v1/devices/' + deviceID + '/settings/address', headers=headers)
 
-    print(r)
-    print(r.text)
+    if r.status_code != 200:
+        return '', True
 
     line1 = r.json()['addressLine1']
     city = r.json()['city']
 
-    return line1 + ' ' + city
+    address = line1 + ' ' + city
+
+    return address, False
 
 def on_session_ended(session_ended_request, session):
     """ Called when the user ends the session.
