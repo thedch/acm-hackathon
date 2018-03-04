@@ -5,6 +5,7 @@ import json
 import googlemaps
 import auth
 import math
+from num2words import num2words
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -77,10 +78,10 @@ def newBusRoute(intent, session, address):
     session_attributes = {}
     reprompt_text = None
     should_end_session = True
+
     destination = "UCSC " + intent['slots']['Destinations']['value']
 
     gmaps = googlemaps.Client(key=auth.key)
-
     directions = gmaps.directions(address,
                          destination,
                          mode="transit")
@@ -93,6 +94,11 @@ def newBusRoute(intent, session, address):
 
     busNumber = bus_step['html_instructions'].split()[2] # Get the number of the bus (20, 16, etc)
     busStop = bus_step['transit_details']['departure_stop']['name'] # Get the name of the bus stop to walk to
+    deptTime = bus_step['transit_details']['departure_time']['text'] # Get the name of the bus stop to walk to
+
+    hour = num2words(int(deptTime.split(':')[0]))
+    minute = num2words(int(deptTime.split(':')[1][:-2]))
+
 
     # If the user is close to campus, the ideal route with be a clockwise or
     # counterclockwise loop. This adds the phrase 'loop bus' to be more explicit
@@ -101,8 +107,8 @@ def newBusRoute(intent, session, address):
     if 'lockwise' in busNumber:
         busNumber = busNumber + ' loop bus'
 
-    speech_output = 'To get to ' + destination
-    speech_output += 'Take the ' + busNumber
+    speech_output = 'To get to ' + destination + ' by ' + hour + ' ' + minute + ' '
+    speech_output += 'Take the ' + busNumber + ' '
     speech_output += 'From ' + address + '. '
     speech_output += 'Get on at ' + busStop + '. '
 
