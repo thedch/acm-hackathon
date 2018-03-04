@@ -15,9 +15,23 @@ First, invoke the Alexa Skill.
 
 Immediately, after, say the proper command:
 
-` "I need a bus to Kresge" -- From your address configured (automagically), obtains the closes santa cruz metro bus to your nearest stop.`
+`"I need a bus to Kresge" -- From your address configured (automagically), obtains the closest santa cruz metro bus to your nearest stop.` 
+
+This quickly tells you what the next bus is, without having to wonder :)
 
 You can name any of the UCSC Colleges for this first utterance.
+
+1. Porter
+2. Oakes
+3. Baskin
+4. Kresge
+5. Nine
+6. Ten
+7. Stevenson
+8. Bookstore
+9. Gym
+10. East Remote
+11. Opers
 
 ` "I'm hungry" -- Lists all currently open dining halls `
 
