@@ -1,25 +1,25 @@
 ## Alexa Skill for Slugsistant
 
-Fellow sluggers here is the new Amazon Alexa App to help your young journey.
+Fellow Slugs, here is a new Amazon Alexa App to help you with campus living.
 
-Amazon Alexa Slugsistant helps you find Santa Cruz Metro Buses, and Dininghall information, as well as Position of Loop tracking!!!
+Amazon Alexa Slugsistant helps you find Santa Cruz Metro Buses, dining hall information, as well as position of Loop bus tracking!
 
 First install Amazon Alexa Slugsistant skill app from your mobile device.
 Next, change the location permission settings for slugsistant to allow access to device location.
 
 ## Commands
 
-First, invoke the Alexa Skill.
+invoke the Alexa Skill:
 
 "Alexa, open slugsistant" -- Opens slugsistant Alexa Skill
 
 Immediately, after, say the proper command:
 
-`"I need a bus to Kresge" -- From your address configured (automagically), obtains the closest santa cruz metro bus to your nearest stop.` 
+"I need a bus to Kresge" -- From your address configured (automagically), obtains the closest santa cruz metro bus to your nearest stop.
 
 This quickly tells you what the next bus is, without having to wonder :)
 
-You can name any of the UCSC Colleges for this first utterance.
+You can name any of the UCSC Colleges as a destination for this first utterance.
 
 1. Porter
 2. Oakes
@@ -33,14 +33,13 @@ You can name any of the UCSC Colleges for this first utterance.
 10. East Remote
 11. Opers
 
-` "I'm hungry" -- Lists all currently open dining halls `
+"I'm hungry" -- Lists all currently open dining halls
 
-` "I neeed a Loop" -- Lists all loops in service and the areas where they are.`
+"I neeed a Loop" -- Lists all loops in service and the areas where they are.
 
 ## Dependencies
-1. Google maps python library
-2. Requests API
-3. Python Math
+1. Google maps python client
+2. Requests package
 4. Num2Words
 
 ## About
